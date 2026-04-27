@@ -10,82 +10,106 @@
 # Nombre compañero 4
 # ---------------------------------------------------------
 
+# Importamos clases para trabajar con clases abstractas
 from abc import ABC, abstractmethod
+
+# Importamos datetime para registrar fecha y hora en logs
 import datetime
 
-# ---------------------------
-# ARCHIVO DE LOGS
-# ---------------------------
+
+# ---------------------------------------------------------
+# FUNCIÓN PARA REGISTRAR ERRORES EN ARCHIVO
+# ---------------------------------------------------------
 def registrar_log(mensaje):
+    # Abrimos (o creamos) el archivo logs.txt en modo agregar
     with open("logs.txt", "a") as archivo:
+        # Guardamos la fecha, hora y mensaje del error
         archivo.write(f"{datetime.datetime.now()} - {mensaje}\n")
 
 
-# ---------------------------
+# ---------------------------------------------------------
 # EXCEPCIONES PERSONALIZADAS
-# ---------------------------
+# ---------------------------------------------------------
+
+# Excepción para errores relacionados con clientes
 class ErrorCliente(Exception):
     pass
 
+# Excepción para errores en servicios
 class ErrorServicio(Exception):
     pass
 
+# Excepción para errores en reservas
 class ErrorReserva(Exception):
     pass
 
 
-# ---------------------------
+# ---------------------------------------------------------
 # CLASE CLIENTE
-# ---------------------------
+# ---------------------------------------------------------
 class Cliente:
 
+    # Constructor de la clase Cliente
     def __init__(self, nombre, identificacion):
 
+        # Validamos que el nombre no esté vacío
         if not nombre:
             raise ErrorCliente("Nombre inválido")
 
+        # Validamos que la identificación no esté vacía
         if not identificacion:
             raise ErrorCliente("ID inválido")
 
+        # Atributos privados (encapsulación)
         self._nombre = nombre
         self._id = identificacion
 
+    # Método para mostrar el cliente como texto
     def __str__(self):
         return f"{self._nombre} - {self._id}"
 
 
-# ---------------------------
+# ---------------------------------------------------------
 # CLASE ABSTRACTA SERVICIO
-# ---------------------------
+# ---------------------------------------------------------
 class Servicio(ABC):
 
+    # Constructor
     def __init__(self, nombre, costo_base):
         self.nombre = nombre
         self.costo_base = costo_base
 
+    # Método abstracto para calcular costo
     @abstractmethod
     def calcular_costo(self, tiempo):
         pass
 
+    # Método abstracto para describir el servicio
     @abstractmethod
     def descripcion(self):
         pass
 
 
-# ---------------------------
-# SERVICIOS
-# ---------------------------
+# ---------------------------------------------------------
+# CLASE SALA (HEREDA DE SERVICIO)
+# ---------------------------------------------------------
 class Sala(Servicio):
 
+    # Calcula costo multiplicando tiempo por costo base
     def calcular_costo(self, tiempo):
         return self.costo_base * tiempo
 
+    # Describe el servicio
     def descripcion(self):
         return "Room reservation service"
 
 
+# ---------------------------------------------------------
+# CLASE EQUIPO (HEREDA DE SERVICIO)
+# ---------------------------------------------------------
 class Equipo(Servicio):
 
+    # Aplica un recargo del 20%
     def calcular_costo(self, tiempo):
         return self.costo_base * tiempo * 1.2
 
@@ -93,8 +117,12 @@ class Equipo(Servicio):
         return "Equipment rental service"
 
 
+# ---------------------------------------------------------
+# CLASE ASESORIA (HEREDA DE SERVICIO)
+# ---------------------------------------------------------
 class Asesoria(Servicio):
 
+    # Aplica un recargo del 50%
     def calcular_costo(self, tiempo):
         return self.costo_base * tiempo * 1.5
 
@@ -102,13 +130,15 @@ class Asesoria(Servicio):
         return "Consulting service"
 
 
-# ---------------------------
+# ---------------------------------------------------------
 # CLASE RESERVA
-# ---------------------------
+# ---------------------------------------------------------
 class Reserva:
 
+    # Constructor de la reserva
     def __init__(self, cliente, servicio, tiempo):
 
+        # Validamos que el tiempo sea positivo
         if tiempo <= 0:
             raise ErrorReserva("Tiempo inválido")
 
@@ -117,91 +147,100 @@ class Reserva:
         self.tiempo = tiempo
         self.estado = "Pendiente"
 
+    # Método para confirmar la reserva
     def confirmar(self):
         self.estado = "Confirmada"
 
+    # Método para cancelar la reserva
     def cancelar(self):
         self.estado = "Cancelada"
 
+    # Método para procesar la reserva
     def procesar(self):
 
         try:
+            # Intentamos calcular el costo
             costo = self.servicio.calcular_costo(self.tiempo)
+
         except Exception as e:
+            # Encadenamiento de excepciones
             raise ErrorReserva("Error al calcular costo") from e
 
+        # Retornamos el costo calculado
         return costo
 
 
-# ---------------------------
+# ---------------------------------------------------------
 # LISTAS DEL SISTEMA
-# ---------------------------
+# ---------------------------------------------------------
 clientes = []
 servicios = []
 reservas = []
 
 
-# ---------------------------
-# SIMULACIÓN (10 OPERACIONES)
-# ---------------------------
+# ---------------------------------------------------------
+# FUNCIÓN DE SIMULACIÓN (PRUEBAS DEL SISTEMA)
+# ---------------------------------------------------------
 def simulacion():
 
     try:
-        # 1 - Cliente válido
+        # 1. Crear cliente válido
         c1 = Cliente("Juan", "123")
         clientes.append(c1)
 
-        # 2 - Cliente inválido
+        # 2. Intentar crear cliente inválido
         try:
             c2 = Cliente("", "")
         except Exception as e:
             registrar_log(e)
 
-        # 3 - Crear servicios
+        # 3. Crear servicios
         s1 = Sala("Sala", 50)
         s2 = Equipo("Equipo", 40)
         s3 = Asesoria("Asesoria", 100)
 
         servicios.extend([s1, s2, s3])
 
-        # 4 - Reserva válida
+        # 4. Crear reserva válida
         r1 = Reserva(c1, s1, 2)
         reservas.append(r1)
 
-        # 5 - Procesar reserva
+        # 5. Procesar reserva
         try:
             costo = r1.procesar()
             print(f"Costo reserva: {costo}")
         except Exception as e:
             registrar_log(e)
 
-        # 6 - Reserva inválida
+        # 6. Crear reserva inválida
         try:
             r2 = Reserva(c1, s2, -1)
         except Exception as e:
             registrar_log(e)
 
-        # 7 - Otra reserva
+        # 7. Crear otra reserva válida
         r3 = Reserva(c1, s3, 3)
         reservas.append(r3)
 
-        # 8 - Confirmar
+        # 8. Confirmar reserva
         r3.confirmar()
 
-        # 9 - Cancelar
+        # 9. Cancelar reserva
         r1.cancelar()
 
-        # 10 - Mostrar reservas
+        # 10. Mostrar reservas
         for r in reservas:
             print(f"{r.cliente} - {r.servicio.nombre} - {r.estado}")
 
     except Exception as e:
         registrar_log(e)
+
     finally:
+        # Este bloque siempre se ejecuta
         print("Simulación finalizada correctamente")
 
 
-# ---------------------------
-# EJECUCIÓN
-# ---------------------------
+# ---------------------------------------------------------
+# EJECUCIÓN DEL PROGRAMA
+# ---------------------------------------------------------
 simulacion()
